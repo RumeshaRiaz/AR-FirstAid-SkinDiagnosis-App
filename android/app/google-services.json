@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "630936682274",
+    "firebase_url": "https://doktap-c19da-default-rtdb.firebaseio.com",
+    "project_id": "doktap-c19da",
+    "storage_bucket": "doktap-c19da.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:630936682274:android:91b5e0a3e712a93679af7b",
+        "android_client_info": {
+          "package_name": "com.anonymous.ReactNative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSheujyVaWkTOHnBRPQhLOV-LnT3--ggU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

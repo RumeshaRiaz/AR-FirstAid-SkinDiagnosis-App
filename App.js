@@ -7,12 +7,22 @@ import RegularUserRegister1 from './components/RegularUserRegister1';
 import RegularUserRegister2 from './components/RegularUserRegister2';
 import ProfessionalRegister1 from './components/ProfessionalRegister1';
 import ProfessionalRegister2 from './components/ProfessionalRegister2';
-import ForgotPassword1 from './components/ForgotPassword1';
-import ForgotPassword2 from './components/ForgotPassword2';
-import ForgotPassword3 from './components/ForgotPassword3';
+import UpdatePasswordScreen from './components/UpdatePasswordScreen';
+import HomeScreen from './components/HomeScreen';
+import SymptomsCheckerScreen from './components/SymptomsCheckerScreen';
+import ScanForDiseaseScreen from './components/ScanForDiseaseScreen';
+import NearbyHospitalsScreen from './components/NearbyHospitalsScreen';
+import FirstAidScreen from './components/FirstAidScreen';
+import ARFirstAidScreen from './components/ARFirstAidScreen';
+import SuggestionScreen from './components/SuggestionScreen';
+import ReportProblemScreen from './components/ReportProblemScreen';
+import ProfileScreen from './components/ProfileScreen';
+import ProfessionalHomeScreen from './components/ProfessionalHomeScreen';
+import ProfessionalProfileScreen from './components/ProfessionalProfileScreen';
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('splash'); // 'splash', 'login', 'register', 'regularUserRegister1', 'regularUserRegister2', 'professionalRegister1', 'professionalRegister2', 'forgotPassword1', 'forgotPassword2', 'forgotPassword3'
+  const [currentScreen, setCurrentScreen] = useState('splash'); // 'splash', 'login', 'register', 'regularUserRegister1', 'regularUserRegister2', 'professionalRegister1', 'professionalRegister2', 'updatePassword', 'home', 'professionalHome', 'professionalProfile', 'symptomsChecker', 'scanForDisease', 'nearbyHospitals', 'firstAid', 'arFirstAid', 'suggestion', 'reportProblem', 'profile'
+  const [selectedInjuryType, setSelectedInjuryType] = useState(null);
 
   const handleNavigateToLogin = () => {
     setCurrentScreen('login');
@@ -38,13 +48,19 @@ export default function App() {
     setCurrentScreen('professionalRegister1');
   };
 
+  const [registerData1, setRegisterData1] = useState(null);
+
   const handleNavigateToRegister2 = (data) => {
     console.log('Regular Register1 Data:', data);
+    setRegisterData1(data);
     setCurrentScreen('regularUserRegister2');
   };
 
+  const [professionalRegisterData1, setProfessionalRegisterData1] = useState(null);
+
   const handleNavigateToProfessionalRegister2 = (data) => {
     console.log('Professional Register1 Data:', data);
+    setProfessionalRegisterData1(data);
     setCurrentScreen('professionalRegister2');
   };
 
@@ -58,34 +74,106 @@ export default function App() {
 
   const handleCreateAccount = (data) => {
     console.log('Register2 Data:', data);
-    // Handle account creation here
-    // You can navigate to login or home screen after successful registration
+    // Account created successfully, navigate based on user type
+    const userType = data?.userType || 'regular';
+    const professionalStatus = data?.status;
+    
+    if (userType === 'professional') {
+      // Professional should not auto-login if status is pending
+      if (professionalStatus === 'pending') {
+        // Navigate to login instead
+        setCurrentScreen('login');
+      } else if (professionalStatus === 'approved') {
+        setCurrentScreen('professionalHome');
+      } else {
+        // Rejected or unknown status, go to login
+        setCurrentScreen('login');
+      }
+    } else {
+      // Regular user, navigate to home
+      setCurrentScreen('home');
+    }
   };
 
-  const handleNavigateToForgotPassword = () => {
-    setCurrentScreen('forgotPassword1');
+  const handleNavigateToUpdatePassword = () => {
+    setCurrentScreen('updatePassword');
   };
 
-  const handleForgotPasswordNext = (email) => {
-    console.log('Forgot Password Email:', email);
-    setCurrentScreen('forgotPassword2');
-  };
-
-  const handleForgotPasswordCodeNext = (code) => {
-    console.log('Verification Code:', code);
-    setCurrentScreen('forgotPassword3');
-  };
-
-  const handleForgotPasswordResend = () => {
-    console.log('Resend code');
-    // Handle resend logic here
-  };
-
-  const handleChangePassword = (newPassword) => {
-    console.log('New Password:', newPassword);
-    // Handle password change logic here
-    // Navigate back to login after successful password change
+  const handlePasswordUpdated = () => {
+    // Navigate back to login after successful password update
     setCurrentScreen('login');
+  };
+
+  const handleNavigateToHome = () => {
+    setCurrentScreen('home');
+  };
+
+  const handleNavigateToProfessionalHome = () => {
+    setCurrentScreen('professionalHome');
+  };
+
+  const handleNavigateToMenu = () => {
+    // Handle menu navigation
+    console.log('Navigate to Menu');
+  };
+
+  const handleNavigateToProfile = () => {
+    setCurrentScreen('profile');
+  };
+
+  const handleNavigateToProfessionalProfile = () => {
+    setCurrentScreen('professionalProfile');
+  };
+
+  const handleLogout = () => {
+    setCurrentScreen('login');
+  };
+
+  const handleBackToProfessionalHome = () => {
+    setCurrentScreen('professionalHome');
+  };
+
+  const handleNavigateToCamera = () => {
+    console.log('Navigate to Camera');
+    // Handle camera navigation here
+  };
+
+  const handleNavigateToSymptomsChecker = () => {
+    setCurrentScreen('symptomsChecker');
+  };
+
+  const handleNavigateToScanDisease = () => {
+    setCurrentScreen('scanForDisease');
+  };
+
+  const handleNavigateToARFirstAid = (injuryType) => {
+    setSelectedInjuryType(injuryType);
+    setCurrentScreen('arFirstAid');
+  };
+
+  const handleBackToFirstAid = () => {
+    setCurrentScreen('firstAid');
+    setSelectedInjuryType(null);
+  };
+
+  const handleNavigateToNearbyHospitals = () => {
+    setCurrentScreen('nearbyHospitals');
+  };
+
+  const handleNavigateToFirstAid = () => {
+    setCurrentScreen('firstAid');
+  };
+
+  const handleNavigateToSuggestion = () => {
+    setCurrentScreen('suggestion');
+  };
+
+  const handleNavigateToReportProblem = () => {
+    setCurrentScreen('reportProblem');
+  };
+
+  const handleBackToHome = () => {
+    setCurrentScreen('home');
   };
 
   return (
@@ -96,26 +184,82 @@ export default function App() {
       {currentScreen === 'login' && (
         <LoginScreen 
           onNavigateToRegister={handleNavigateToRegister}
-          onNavigateToForgotPassword={handleNavigateToForgotPassword}
+          onNavigateToForgotPassword={handleNavigateToUpdatePassword}
+          onNavigateToHome={handleNavigateToHome}
+          onNavigateToProfessionalHome={handleNavigateToProfessionalHome}
         />
       )}
-      {currentScreen === 'forgotPassword1' && (
-        <ForgotPassword1 
-          onCancel={handleBackToLogin}
-          onNext={handleForgotPasswordNext}
+      {currentScreen === 'home' && (
+        <HomeScreen 
+          onNavigateToProfile={handleNavigateToProfile}
+          onNavigateToCamera={handleNavigateToCamera}
+          onNavigateToSymptomsChecker={handleNavigateToSymptomsChecker}
+          onNavigateToScanDisease={handleNavigateToScanDisease}
+          onNavigateToNearbyHospitals={handleNavigateToNearbyHospitals}
+          onNavigateToFirstAid={handleNavigateToFirstAid}
+          onNavigateToSuggestion={handleNavigateToSuggestion}
+          onNavigateToReportProblem={handleNavigateToReportProblem}
         />
       )}
-      {currentScreen === 'forgotPassword2' && (
-        <ForgotPassword2 
-          onBack={() => setCurrentScreen('forgotPassword1')}
-          onNext={handleForgotPasswordCodeNext}
-          onResend={handleForgotPasswordResend}
+      {currentScreen === 'professionalHome' && (
+        <ProfessionalHomeScreen 
+          onNavigateToProfile={handleNavigateToProfessionalProfile}
+          onNavigateToMenu={handleNavigateToMenu}
         />
       )}
-      {currentScreen === 'forgotPassword3' && (
-        <ForgotPassword3 
-          onBack={() => setCurrentScreen('forgotPassword2')}
-          onChangePassword={handleChangePassword}
+      {currentScreen === 'professionalProfile' && (
+        <ProfessionalProfileScreen 
+          onBack={handleBackToProfessionalHome}
+          onLogout={handleLogout}
+        />
+      )}
+      {currentScreen === 'symptomsChecker' && (
+        <SymptomsCheckerScreen 
+          onBack={handleBackToHome}
+        />
+      )}
+      {currentScreen === 'scanForDisease' && (
+        <ScanForDiseaseScreen 
+          onBack={handleBackToHome}
+        />
+      )}
+      {currentScreen === 'nearbyHospitals' && (
+        <NearbyHospitalsScreen 
+          onBack={handleBackToHome}
+        />
+      )}
+      {currentScreen === 'firstAid' && (
+        <FirstAidScreen 
+          onBack={handleBackToHome}
+          onNavigateToARFirstAid={handleNavigateToARFirstAid}
+        />
+      )}
+      {currentScreen === 'arFirstAid' && (
+        <ARFirstAidScreen 
+          onBack={handleBackToFirstAid}
+          injuryType={selectedInjuryType}
+        />
+      )}
+      {currentScreen === 'suggestion' && (
+        <SuggestionScreen 
+          onBack={handleBackToHome}
+        />
+      )}
+      {currentScreen === 'reportProblem' && (
+        <ReportProblemScreen 
+          onBack={handleBackToHome}
+        />
+      )}
+      {currentScreen === 'profile' && (
+        <ProfileScreen 
+          onBack={handleBackToHome}
+          onLogout={handleLogout}
+        />
+      )}
+      {currentScreen === 'updatePassword' && (
+        <UpdatePasswordScreen 
+          onBack={handleBackToLogin}
+          onPasswordUpdated={handlePasswordUpdated}
         />
       )}
       {currentScreen === 'register' && (
@@ -135,6 +279,8 @@ export default function App() {
         <ProfessionalRegister2 
           onBack={handleBackToProfessionalRegister1}
           onCreateAccount={handleCreateAccount}
+          registerData1={professionalRegisterData1}
+          onNavigateToLogin={handleNavigateToLogin}
         />
       )}
       {currentScreen === 'regularUserRegister1' && (
@@ -147,6 +293,7 @@ export default function App() {
         <RegularUserRegister2 
           onBack={handleBackToRegister1}
           onCreateAccount={handleCreateAccount}
+          registerData1={registerData1}
         />
       )}
       <StatusBar style="light" />
