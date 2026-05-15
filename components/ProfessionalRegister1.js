@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   View, 
   Image,
@@ -8,33 +8,170 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert,
+  Modal,
+  ActivityIndicator
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
+import { ref, get } from 'firebase/database';
+import { realtimeDb } from '../config/firebaseConfig';
 
 export default function ProfessionalRegister1({ onBack, onNavigateToProfessionalRegister2 }) {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
+  const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [birthDate, setBirthDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [specialization, setSpecialization] = useState('');
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
+  const [loadingHospitals, setLoadingHospitals] = useState(true);
   const [licenseNo, setLicenseNo] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [licenseImageUri, setLicenseImageUri] = useState(null);
+  const [uploadingLicense, setUploadingLicense] = useState(false);
+
+  const genderOptions = ['Male', 'Female', 'Other'];
+
+  useEffect(() => {
+    const loadHospitals = async () => {
+      try {
+        setLoadingHospitals(true);
+        const snapshot = await get(ref(realtimeDb, 'hospitals'));
+
+        if (snapshot.exists()) {
+          const hospitalData = snapshot.val();
+          const hospitalList = Object.keys(hospitalData)
+            .map((hospitalId) => ({
+              id: hospitalId,
+              name: hospitalData[hospitalId]?.name || hospitalData[hospitalId]?.hospitalName || 'Unnamed Hospital',
+              address: hospitalData[hospitalId]?.address || '',
+            }))
+            .filter((hospital) => hospital.name);
+
+          setHospitals(hospitalList);
+        } else {
+          setHospitals([]);
+        }
+      } catch (error) {
+        console.error('Error loading hospitals:', error);
+        Alert.alert('Error', 'Failed to load hospitals. Please try again.');
+      } finally {
+        setLoadingHospitals(false);
+      }
+    };
+
+    loadHospitals();
+  }, []);
+
+  const formatDate = (date) => {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleDateChange = (event, date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (date) {
+      setSelectedDate(date);
+      setBirthDate(formatDate(date));
+    }
+  };
+
+  const handleGenderSelect = (selectedGender) => {
+    setGender(selectedGender);
+    setShowGenderDropdown(false);
+  };
 
   const handleNext = () => {
+    // Validation
+    if (!fullName.trim()) {
+      Alert.alert('Error', 'Please enter your full name');
+      return;
+    }
+    if (!gender.trim()) {
+      Alert.alert('Error', 'Please enter your gender');
+      return;
+    }
+    if (!birthDate.trim()) {
+      Alert.alert('Error', 'Please enter your birth date');
+      return;
+    }
+    if (!specialization.trim()) {
+      Alert.alert('Error', 'Please enter your specialization');
+      return;
+    }
+    if (!selectedHospital) {
+      Alert.alert('Error', 'Please select your hospital');
+      return;
+    }
+    if (!licenseNo.trim()) {
+      Alert.alert('Error', 'Please enter your license number');
+      return;
+    }
+    if (!contactNumber.trim()) {
+      Alert.alert('Error', 'Please enter your contact number');
+      return;
+    }
+    if (contactNumber.trim().length < 10) {
+      Alert.alert('Error', 'Please enter a valid contact number');
+      return;
+    }
+
+    // Navigate to Register2 with data
     if (onNavigateToProfessionalRegister2) {
       onNavigateToProfessionalRegister2({
-        fullName,
-        gender,
-        birthDate,
-        specialization,
-        licenseNo,
-        contactNumber
+        fullName: fullName.trim(),
+        gender: gender.trim(),
+        birthDate: birthDate.trim(),
+        specialization: specialization.trim(),
+        hospitalId: selectedHospital.id,
+        hospitalName: selectedHospital.name,
+        hospitalAddress: selectedHospital.address || '',
+        licenseNo: licenseNo.trim(),
+        contactNumber: contactNumber.trim(),
+        licenseImageUri: licenseImageUri
       });
     }
   };
 
-  const handleUploadLicense = () => {
-    // Handle license upload here
-    console.log('Upload license pressed');
+  const requestImagePermission = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to upload your license!');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleUploadLicense = async () => {
+    try {
+      const hasPermission = await requestImagePermission();
+      if (!hasPermission) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1.0,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setLicenseImageUri(result.assets[0].uri);
+        Alert.alert('Success', 'License image selected. You can change it by selecting again.');
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
   };
 
   return (
@@ -69,21 +206,62 @@ export default function ProfessionalRegister1({ onBack, onNavigateToProfessional
             onChangeText={setFullName}
             autoCapitalize="words"
           />
-          <TextInput
+          <TouchableOpacity 
             style={styles.input}
-            placeholder="Gender"
-            placeholderTextColor="#999"
-            value={gender}
-            onChangeText={setGender}
-            autoCapitalize="words"
-          />
-          <TextInput
+            onPress={() => setShowGenderDropdown(true)}
+          >
+            <Text style={gender ? styles.inputText : styles.placeholderText}>
+              {gender || 'Gender'}
+            </Text>
+            <View style={styles.dropdownArrow}>
+              <View style={styles.chevronLine1} />
+              <View style={styles.chevronLine2} />
+            </View>
+          </TouchableOpacity>
+
+          <Modal
+            visible={showGenderDropdown}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowGenderDropdown(false)}
+          >
+            <TouchableOpacity 
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowGenderDropdown(false)}
+            >
+              <View style={styles.dropdownContainer}>
+                {genderOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.dropdownOption}
+                    onPress={() => handleGenderSelect(option)}
+                  >
+                    <Text style={styles.dropdownOptionText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          <TouchableOpacity 
             style={styles.input}
-            placeholder="Birth Date"
-            placeholderTextColor="#999"
-            value={birthDate}
-            onChangeText={setBirthDate}
-          />
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={birthDate ? styles.inputText : styles.placeholderText}>
+              {birthDate || 'Birth Date'}
+            </Text>
+          </TouchableOpacity>
+          
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
           <TextInput
             style={styles.input}
             placeholder="Specialization"
@@ -92,6 +270,61 @@ export default function ProfessionalRegister1({ onBack, onNavigateToProfessional
             onChangeText={setSpecialization}
             autoCapitalize="words"
           />
+          <TouchableOpacity 
+            style={styles.input}
+            onPress={() => setShowHospitalDropdown(true)}
+            disabled={loadingHospitals}
+          >
+            <Text style={selectedHospital ? styles.inputText : styles.placeholderText}>
+              {loadingHospitals
+                ? 'Loading hospitals...'
+                : selectedHospital?.name || 'Select Hospital'}
+            </Text>
+            <View style={styles.dropdownArrow}>
+              <View style={styles.chevronLine1} />
+              <View style={styles.chevronLine2} />
+            </View>
+          </TouchableOpacity>
+
+          <Modal
+            visible={showHospitalDropdown}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowHospitalDropdown(false)}
+          >
+            <TouchableOpacity 
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowHospitalDropdown(false)}
+            >
+              <View style={styles.dropdownContainer}>
+                <Text style={styles.dropdownTitle}>Select Hospital</Text>
+                <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled">
+                  {hospitals.length === 0 ? (
+                    <View style={styles.dropdownOption}>
+                      <Text style={styles.dropdownOptionText}>No hospitals available</Text>
+                    </View>
+                  ) : (
+                    hospitals.map((hospital) => (
+                      <TouchableOpacity
+                        key={hospital.id}
+                        style={styles.dropdownOption}
+                        onPress={() => {
+                          setSelectedHospital(hospital);
+                          setShowHospitalDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownOptionText}>{hospital.name}</Text>
+                        {!!hospital.address && (
+                          <Text style={styles.dropdownOptionSubtext}>{hospital.address}</Text>
+                        )}
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            </TouchableOpacity>
+          </Modal>
           <TextInput
             style={styles.input}
             placeholder="License No."
@@ -110,9 +343,17 @@ export default function ProfessionalRegister1({ onBack, onNavigateToProfessional
           />
         </View>
 
-        <TouchableOpacity style={styles.uploadButton} onPress={handleUploadLicense}>
-          <Text style={styles.uploadButtonText}>Upload Your Medical License</Text>
-          <Text style={styles.uploadIcon}>☁</Text>
+        <TouchableOpacity style={styles.uploadButton} onPress={handleUploadLicense} disabled={uploadingLicense}>
+          {uploadingLicense ? (
+            <ActivityIndicator color="#0097B2" size="small" />
+          ) : (
+            <>
+              <Text style={styles.uploadButtonText}>
+                {licenseImageUri ? 'License Image Selected ✓' : 'Upload Your Medical License'}
+              </Text>
+              <Text style={styles.uploadIcon}>☁</Text>
+            </>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
@@ -179,6 +420,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 15,
     color: '#000',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  inputText: {
+    fontSize: 16,
+    color: '#000',
+    flex: 1,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#999',
+    flex: 1,
+  },
+  dropdownArrow: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  chevronLine1: {
+    position: 'absolute',
+    width: 8,
+    height: 2,
+    backgroundColor: '#0097B2',
+    transform: [{ rotate: '45deg' }],
+    top: 8,
+    right: 4,
+  },
+  chevronLine2: {
+    position: 'absolute',
+    width: 8,
+    height: 2,
+    backgroundColor: '#0097B2',
+    transform: [{ rotate: '-45deg' }],
+    top: 8,
+    left: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 300,
+    maxHeight: '70%',
+    overflow: 'hidden',
+  },
+  dropdownTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0097B2',
+    textAlign: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  dropdownList: {
+    maxHeight: 320,
+  },
+  dropdownOption: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  dropdownOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownOptionSubtext: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
   },
   uploadButton: {
     backgroundColor: '#FFFFFF',
