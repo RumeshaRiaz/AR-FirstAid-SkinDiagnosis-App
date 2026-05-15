@@ -1,15 +1,23 @@
 {
   "expo": {
-    "name": "ReactNative",
-    "slug": "ReactNative",
+    "name": "DokTap",
+    "slug": "DokTap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "projectId": "0ab5ba42-7ef9-49a9-9532-8ffb128da8f2",
     "plugins": [
       "expo-dev-client",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0097B2"
+        }
+      ]
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -27,6 +35,8 @@
       }
     },
     "android": {
+      "package": "com.anonymous.ReactNative",
+      "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -35,15 +45,13 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "POST_NOTIFICATIONS"
       ],
       "config": {
         "googleMaps": {
           "apiKey": ""
         }
-      },
-      "package": "com.anonymous.ReactNative"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
